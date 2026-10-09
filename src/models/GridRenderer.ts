@@ -1,67 +1,83 @@
 import type { Grid } from "./Grid";
+import type { Palette } from "./palettes";
 
 export interface GridRendererOptions {
-    ctx: CanvasRenderingContext2D;
-    gridStyle: GridStyle;
-    palette: string[];
-};
+  ctx: CanvasRenderingContext2D;
+  gridStyle: GridStyle;
+  palette: Palette;
+}
 
 export class GridRenderer {
-    private ctx;
-    private palette;
-    private gridStyle;
+  private ctx;
+  private palette;
+  private gridStyle;
 
-    constructor(options: GridRendererOptions) {
-        this.ctx = options.ctx;
-        this.palette = options.palette;
-        this.gridStyle = options.gridStyle;
+  constructor(options: GridRendererOptions) {
+    this.ctx = options.ctx;
+    this.palette = options.palette;
+    this.gridStyle = options.gridStyle;
+  }
+
+  drawCell(x: number, y: number, val: number): void {
+    const ctx = this.ctx;
+    const { cellSize, borderColor, borderWidth } = this.gridStyle;
+
+    ctx.fillStyle = borderColor;
+    ctx.fillRect(x, y, cellSize, cellSize);
+
+    ctx.fillStyle = this.getColor(val);
+
+    ctx.fillRect(
+      x + borderWidth,
+      y + borderWidth,
+      cellSize - 2 * borderWidth,
+      cellSize - 2 * borderWidth,
+    );
+  }
+
+  private getColor(val: number): string {
+    switch (val) {
+      case 0:
+        return this.palette.empty;
+      case 1:
+        return this.palette.snakeBody;
+      case 2:
+        return this.palette.snakeHead;
+      case 3:
+        return this.palette.fruit;
+      case 4:
+        return this.palette.wall;
+      default:
+        return "white";
     }
+  }
 
-    drawCell(x: number, y: number, val: number): void {
-        const ctx = this.ctx;
-        const palette = this.palette;
-        const { cellSize, borderColor, borderWidth } = this.gridStyle;
+  drawGrid(grid: Grid): void {
+    const { cellSize } = this.gridStyle;
 
-        ctx.fillStyle = borderColor;
-        ctx.fillRect(x, y, cellSize, cellSize);
+    for (let i = 0; i < grid.rows; i++) {
+      for (let j = 0; j < grid.cols; j++) {
+        const x = j * cellSize;
+        const y = i * cellSize;
 
-        ctx.fillStyle = val >= palette.length || val < 0 ? "white" : palette[val];
-        ctx.fillRect(x + borderWidth, y + borderWidth, cellSize - 2 * borderWidth, cellSize - 2 * borderWidth);
+        const val = grid.getCell({ row: i, col: j });
+
+        this.drawCell(x, y, val);
+      }
     }
+  }
 
-    drawGrid(grid: Grid): void {
-        const { cellSize } = this.gridStyle;
-        for (let i = 0; i < grid.rows; i++) {
-            for (let j = 0; j < grid.cols; j++) {
-                const x = j * cellSize;
-                const y = i * cellSize;
+  setStyle(style: GridStyle): void {
+    this.gridStyle = style;
+  }
 
-                const val = grid.getCell({ row: i, col: j });
-                this.drawCell(x, y, val)
-            }
-        }
-    }
-
-    setStyle(style: GridStyle): void {
-        this.gridStyle = style;
-    }
-    setPalette(palette: string[]): void {
-        this.palette = palette;
-    }
+  setPalette(palette: Palette): void {
+    this.palette = palette;
+  }
 }
 
 export type GridStyle = {
-    cellSize: number
-    borderColor: string;
-    borderWidth: number;
+  cellSize: number;
+  borderColor: string;
+  borderWidth: number;
 };
-
-/*
-
-grid dimensions * cellSize => canvas dimensions
-
-borders 
-- draw large rect with border color (w,h = cellSize,cellSize)
-- draw smaller rect with the actual cell color
-
-*/

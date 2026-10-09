@@ -1,6 +1,7 @@
 import { Board, type BoardEvent, type BoardOptions } from "./Board";
 import { GridRenderer, type GridRendererOptions } from "./GridRenderer";
 import { Directions } from "./Snake";
+import type { Palette } from "./palettes";
 
 export interface GameOptions extends BoardOptions, GridRendererOptions {
     paused?: boolean;
@@ -53,16 +54,14 @@ export class Game {
         this.render();
     }
 
-    private reset(): void {
+    reset(): void {
         const options = this.options;
         this.board = new Board(options);
         this.renderer = new GridRenderer(options);
 
-        this.ticksPerSec = options.ticksPerSec ?? 2;
         this.loopId = null;
         this.ticks = 0;
 
-        this.setSpeed(this.ticksPerSec);
         this.board.addFruit();
 
         this.died = false;
@@ -115,6 +114,12 @@ export class Game {
 
         if (!pausedState)
             this.play();
+    }
+
+    setPalette(palette: Palette): void {
+        this.options.palette = palette;
+        this.renderer.setPalette(palette);
+        this.render();
     }
     //#endregion
 
@@ -176,6 +181,11 @@ export class Game {
     };
 
     private readonly handleKeyDown = (event: KeyboardEvent) => {
+        const target = event.target as HTMLElement | null;
+        if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+            return;
+        }
+
         const action = this.keyMap[event.code];
 
         if (!action) return;
