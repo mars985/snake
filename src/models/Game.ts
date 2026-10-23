@@ -1,4 +1,5 @@
 import { Board, type BoardEvent, type BoardOptions } from "./Board";
+import { DirectionalControls } from "./Controls";
 import { GridRenderer, type GridRendererOptions } from "./GridRenderer";
 import { Directions } from "./Snake";
 import type { Palette } from "./palettes";
@@ -49,6 +50,7 @@ export class Game {
 
         this.board.addFruit();
         this.setSpeed(this.ticksPerSec);
+        this.addDirectionalInputs();
         this.addKeyboardInputs();
 
         this.render();
@@ -160,11 +162,6 @@ export class Game {
 
     //#region inputs
     private readonly keyMap: Record<string, () => void> = {
-        ArrowUp: () => this.board.setSnakeDirection(Directions.up),
-        ArrowRight: () => this.board.setSnakeDirection(Directions.right),
-        ArrowDown: () => this.board.setSnakeDirection(Directions.down),
-        ArrowLeft: () => this.board.setSnakeDirection(Directions.left),
-
         Space: () => this.togglePause(),
         Enter: () => {
             if (this.died)
@@ -179,6 +176,23 @@ export class Game {
                 this.reset();
         }
     };
+
+    private addDirectionalInputs(): void {
+        const directionalControls = [
+            [DirectionalControls.up, Directions.up],
+            [DirectionalControls.right, Directions.right],
+            [DirectionalControls.down, Directions.down],
+            [DirectionalControls.left, Directions.left]
+        ] as const;
+
+        for (const [keys, direction] of directionalControls) {
+            for (const key of keys) {
+                this.keyMap[key] = () => {
+                    this.board.setSnakeDirection(direction);
+                };
+            }
+        }
+    }
 
     private readonly handleKeyDown = (event: KeyboardEvent) => {
         const target = event.target as HTMLElement | null;
