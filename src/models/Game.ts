@@ -1,7 +1,8 @@
 import { Board, type BoardEvent, type BoardOptions } from "./Board";
-import { DirectionalControls } from "./Controls";
+import { DirectionalControls, ActionControls } from "./Controls";
 import { GridRenderer, type GridRendererOptions } from "./GridRenderer";
 import { Directions } from "./Snake";
+import { GamepadHandler } from "./GamepadHandler";
 import type { Palette } from "./palettes";
 
 export interface GameOptions extends BoardOptions, GridRendererOptions {
@@ -30,6 +31,9 @@ export class Game {
     private setLength: (length: number) => void;
     private setTicks: (ticks: number) => void;
 
+    private gamepadHandler = new GamepadHandler();
+    private gamepadFrameId: number | null = null;
+
     //#region setup
     constructor(options: GameOptions) {
         this.options = options;
@@ -51,7 +55,9 @@ export class Game {
         this.board.addFruit();
         this.setSpeed(this.ticksPerSec);
         this.addDirectionalInputs();
+        this.addActionInputs();
         this.addKeyboardInputs();
+        this.startGamepadPolling();
 
         this.render();
     }
@@ -81,6 +87,11 @@ export class Game {
     destroy(): void {
         this.pause();
         window.removeEventListener("keydown", this.handleKeyDown);
+
+        if (this.gamepadFrameId !== null) {
+            cancelAnimationFrame(this.gamepadFrameId);
+            this.gamepadFrameId = null;
+        }
     }
     //#endregion
 
@@ -125,6 +136,19 @@ export class Game {
     }
     //#endregion
 
+    //#region gamepad
+    private pollGamepad = (): void => {
+        this.gamepadHandler.poll(this.keyMap);
+        this.gamepadFrameId = requestAnimationFrame(this.pollGamepad);
+    };
+
+    private startGamepadPolling(): void {
+        if (this.gamepadFrameId !== null) return;
+
+        this.gamepadFrameId = requestAnimationFrame(this.pollGamepad);
+    }
+    //#endregion
+
     //#region game loop
     private loop(): void {
         if (this.paused || this.died)
@@ -161,21 +185,30 @@ export class Game {
     //#endregion
 
     //#region inputs
-    private readonly keyMap: Record<string, () => void> = {
-        Space: () => this.togglePause(),
-        Enter: () => {
-            if (this.died)
-                this.reset();
-            else
-                this.play()
-        },
-        Escape: () => this.pause(),
+    private readonly keyMap: Record<string, () => void> = {};
 
-        KeyR: () => {
-            if (this.paused || this.died)
-                this.reset();
+    private addActionInputs(): void {
+        const actions: Record<keyof typeof ActionControls, () => void> = {
+            pause: () => this.pause(),
+            togglePause: () => this.togglePause(),
+            play: () => {
+                if (this.died)
+                    this.reset();
+                else
+                    this.play();
+            },
+            reset: () => {
+                if (this.paused || this.died)
+                    this.reset();
+            }
+        };
+
+        for (const [actionName, keys] of Object.entries(ActionControls)) {
+            for (const key of keys) {
+                this.keyMap[key] = actions[actionName as keyof typeof ActionControls];
+            }
         }
-    };
+    }
 
     private addDirectionalInputs(): void {
         const directionalControls = [
