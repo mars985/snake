@@ -1,6 +1,6 @@
 import { Grid, type GridOptions, type GridPosition } from "../data/Grid";
 import { RandomizedSet } from "../data/RandomizedSet";
-import { Snake, type SnakeOptions } from "./Snake";
+import { Snake, type Direction, type SnakeOptions } from "./Snake";
 
 export interface BoardOptions extends GridOptions, SnakeOptions {
     growIncrement?: number;
@@ -69,7 +69,7 @@ export class Board {
         }
     }
 
-    setSnakeDirection(dir: number): void {
+    setSnakeDirection(dir: Direction): void {
         if (!this.canTurn)
             return;
 

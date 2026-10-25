@@ -1,9 +1,10 @@
 import type { GridPosition } from "../data/Grid";
+import { Queue } from "../data/Queue";
 
 export interface SnakeOptions {
     snakeHead: GridPosition;
     snakeLength?: number;
-    snakeDirection?: number;
+    snakeDirection?: Direction;
 }
 
 export const Directions = {
@@ -12,24 +13,23 @@ export const Directions = {
     down: 2,
     left: 3,
     stopped: -1
-};
+} as const;
 
 export type Direction = typeof Directions[keyof typeof Directions];
 
 export class Snake {
     private length: number;
     private head: GridPosition;
-    private direction: number;
-    private queue: GridPosition[];
+    private direction: Direction;
+    private queue: Queue<GridPosition>;
     private diff = [-1, 0, 1, 0, -1];
 
     constructor(options: SnakeOptions) {
         this.length = options.snakeLength ?? 1;
+        this.length = this.length > 0 ? this.length : 1;
         this.head = options.snakeHead;
         this.direction = options.snakeDirection ?? -1;
-        if (!this.isValidDirection(this.direction))
-            this.direction = -1;
-        this.queue = [this.head];
+        this.queue = new Queue(this.head);
     }
 
     /*
@@ -43,14 +43,8 @@ export class Snake {
     2 -> down -> 1,0
     3 -> left -> 0,-1
     */
-    private isValidDirection(dir: number): boolean {
-        return (dir >= -1 && dir <= 3);
-    }
 
-    setDirection(dir: number): boolean {
-        if (!this.isValidDirection(dir))
-            return false;
-
+    setDirection(dir: Direction): boolean {
         // stop snake
         if (dir === Directions.stopped) {
             this.direction = dir;
@@ -104,8 +98,8 @@ export class Snake {
 
         this.queue.push(newHead);
 
-        if (this.queue.length > this.length) {
-            res.tail = this.queue.shift()!;
+        if (this.queue.size > this.length) {
+            res.tail = this.queue.pop()!;
         }
 
         return res;
