@@ -1,4 +1,4 @@
-import type { GridPosition } from "./Grid";
+import type { GridPosition } from "../data/Grid";
 
 export interface SnakeOptions {
     snakeHead: GridPosition;

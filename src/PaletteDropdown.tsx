@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { palettes, type Palette, type PaletteName } from './models/palettes';
+import { palettes, type Palette, type PaletteName } from './config/palettes.config';
 
 interface PaletteDropdownProps {
   value: PaletteName;

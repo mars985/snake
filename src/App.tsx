@@ -1,28 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
+
 import { Game } from './models/Game';
-import type { GridStyle } from './models/GridRenderer';
 import { Directions } from './models/Snake';
-import { palettes, type PaletteName } from './models/palettes';
+
+import { palettes, type PaletteName } from './config/palettes.config';
+import {difficulty, rows, cols, height, width, gridStyle, snakeHeadStartPosition} from './config/game.config';
+
 import PaletteDropdown from './PaletteDropdown';
-
-const rows = 20;
-const cols = 40;
-
-const cellSize = 30;
-const width = cellSize * cols;
-const height = cellSize * rows;
-
-const gridStyle: GridStyle = {
-  borderColor: "black",
-  borderWidth: 1,
-  cellSize,
-};
-
-const difficulty = {
-  easy: 5,
-  medium: 10,
-  hard: 15
-};
 
 function App() {
   const [ticks, setTicks] = useState(0);
@@ -49,7 +33,7 @@ function App() {
     gameRef.current = new Game({
       rows,
       cols,
-      snakeHead: { row: 3, col: 3 },
+      snakeHead: snakeHeadStartPosition,
       snakeLength: length,
       snakeDirection: Directions.right,
       ctx,

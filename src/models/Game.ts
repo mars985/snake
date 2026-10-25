@@ -3,7 +3,7 @@ import { DirectionalControls, ActionControls } from "./Controls";
 import { GridRenderer, type GridRendererOptions } from "./GridRenderer";
 import { Directions } from "./Snake";
 import { GamepadHandler } from "./GamepadHandler";
-import type { Palette } from "./palettes";
+import type { Palette } from "../config/palettes.config";
 
 export interface GameOptions extends BoardOptions, GridRendererOptions {
     paused?: boolean;

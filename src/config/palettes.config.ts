@@ -1,4 +1,4 @@
-import type { BoardStateName } from "./Board";
+import type { BoardStateName } from "../models/Board";
 
 export type Palette = Record<BoardStateName, string>;
 

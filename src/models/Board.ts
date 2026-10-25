@@ -1,5 +1,5 @@
-import { Grid, type GridOptions, type GridPosition } from "./Grid";
-import { RandomizedSet } from "./RandomizedSet";
+import { Grid, type GridOptions, type GridPosition } from "../data/Grid";
+import { RandomizedSet } from "../data/RandomizedSet";
 import { Snake, type SnakeOptions } from "./Snake";
 
 export interface BoardOptions extends GridOptions, SnakeOptions {

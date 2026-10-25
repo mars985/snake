@@ -1,6 +1,6 @@
 import { BoardStates } from "./Board";
-import type { Grid } from "./Grid";
-import type { Palette } from "./palettes";
+import type { Grid } from "../data/Grid";
+import type { Palette } from "../config/palettes.config";
 
 export interface GridRendererOptions {
   ctx: CanvasRenderingContext2D;
