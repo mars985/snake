@@ -17,10 +17,10 @@ export const gridStyle: GridStyle = {
 export const difficulty = {
   easy: 5,
   medium: 10,
-  hard: 15
+  hard: 15,
 };
 
 export const snakeHeadStartPosition: GridPosition = {
   row: 3,
-  col: 3
+  col: 3,
 };

@@ -1,5 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
-import { palettes, type Palette, type PaletteName } from './config/palettes.config';
+import { useEffect, useRef, useState } from "react";
+import {
+  palettes,
+  type Palette,
+  type PaletteName,
+} from "./config/palettes.config";
 
 interface PaletteDropdownProps {
   value: PaletteName;
@@ -46,20 +50,25 @@ function PaletteDropdown({ value, onChange }: PaletteDropdownProps) {
     <div ref={containerRef} className="relative">
       <button
         className="hover:underline"
-        onMouseDown={e => e.preventDefault()}
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => setOpen(!open)}
       >
-        Palette: <span style={{ color: palettes[value].snakeBody }}>{capitalize(value)}</span>
+        Palette:{" "}
+        <span style={{ color: palettes[value].snakeBody }}>
+          {capitalize(value)}
+        </span>
       </button>
 
       {open && (
         <div className="absolute right-0 top-full mt-1 z-10 bg-black py-1">
-          {paletteNames.map(name => (
+          {paletteNames.map((name) => (
             <button
               key={name}
               className="w-full flex items-center justify-between gap-4 px-3 py-0.5 hover:underline"
-              style={{ color: name === value ? palettes[name].snakeBody : "white" }}
-              onMouseDown={e => e.preventDefault()}
+              style={{
+                color: name === value ? palettes[name].snakeBody : "white",
+              }}
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => select(name)}
             >
               {capitalize(name)}

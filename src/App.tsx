@@ -1,23 +1,33 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 
-import { Game } from './models/Game';
-import { Directions } from './models/Snake';
+import { Game } from "./models/Game";
+import { Directions } from "./models/Snake";
 
-import { palettes, type PaletteName } from './config/palettes.config';
-import {difficulty, rows, cols, height, width, gridStyle, snakeHeadStartPosition} from './config/game.config';
+import { palettes, type PaletteName } from "./config/palettes.config";
+import {
+  difficulty,
+  rows,
+  cols,
+  height,
+  width,
+  gridStyle,
+  snakeHeadStartPosition,
+} from "./config/game.config";
 
-import PaletteDropdown from './PaletteDropdown';
+import PaletteDropdown from "./PaletteDropdown";
 
 function App() {
   const [ticks, setTicks] = useState(0);
   const [paused, setPaused] = useState(true);
   const [death, setDeath] = useState(false);
   const [length, setLength] = useState(1);
-  const [highScore, setHighScore] = useState<number>(() => Number(localStorage.getItem("highScore")) || 0);
+  const [highScore, setHighScore] = useState<number>(
+    () => Number(localStorage.getItem("highScore")) || 0,
+  );
   const [speed, setSpeed] = useState(difficulty.medium);
   const [paletteName, setPaletteName] = useState<PaletteName>(() => {
     const saved = localStorage.getItem("palette");
-    return saved && saved in palettes ? saved as PaletteName : "emerald";
+    return saved && saved in palettes ? (saved as PaletteName) : "emerald";
   });
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -44,7 +54,7 @@ function App() {
       setDeath,
       setPaused,
       setLength,
-      setTicks
+      setTicks,
     });
 
     return () => {
@@ -62,17 +72,16 @@ function App() {
   const handleSpeed = (val: number) => {
     gameRef.current?.setSpeed(val);
     setSpeed(val);
-  }
+  };
 
   const handlePalette = (name: PaletteName) => {
     gameRef.current?.setPalette(palettes[name]);
     setPaletteName(name);
     localStorage.setItem("palette", name);
-  }
+  };
 
   return (
     <div className="bg-zinc-900 w-screen h-screen text-white flex flex-col font-mono select-none">
-
       <div className="flex justify-evenly items-center h-10 text-lg">
         <div>
           Difficulty:{" "}
@@ -104,25 +113,15 @@ function App() {
       </div>
 
       <div className="flex justify-center">
-        <canvas
-          ref={canvasRef}
-          height={height}
-          width={width}
-        />
+        <canvas ref={canvasRef} height={height} width={width} />
       </div>
 
       <div className="grid grid-cols-3 ml-5 mr-5 py-2 text-lg">
-        <div className="text-left">
-          Score: {length}
-        </div>
+        <div className="text-left">Score: {length}</div>
 
-        <div className="text-center">
-          Time: {ticks}
-        </div>
+        <div className="text-center">Time: {ticks}</div>
 
-        <div className="text-right">
-          High Score: {highScore}
-        </div>
+        <div className="text-right">High Score: {highScore}</div>
       </div>
 
       {paused && (
@@ -149,7 +148,6 @@ function App() {
       >
         GitHub
       </a>
-
     </div>
   );
 }
