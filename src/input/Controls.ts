@@ -1,0 +1,76 @@
+import type { ACTION } from "./actions";
+import type { KeyboardInput } from "./KeyboardInput";
+import type { KEYS } from "./keys";
+
+interface ControlsOptions {
+  keyboard: KeyboardInput;
+};
+
+export class Controls {
+  private bindings = new Map<KEYS, Set<ACTION>>();
+  private callbacks = new Map<ACTION, Set<() => void>>();
+
+  private keyboard: KeyboardInput;
+  private keyboardUnsubscribe: () => void;
+
+  constructor(options: ControlsOptions) {
+    this.keyboard = options.keyboard;
+    this.keyboardUnsubscribe = this.keyboard.subscribe(this.handleInput);
+  }
+
+  private handleInput = (key: KEYS) => {
+    const actions = this.bindings.get(key);
+
+    actions?.forEach((action) => this.emit(action));
+  };
+
+  public bind(key: KEYS, action: ACTION) {
+    if (!this.bindings.has(key)) {
+      this.bindings.set(key, new Set());
+    }
+
+    const keyBinds = this.bindings.get(key)!;
+    keyBinds.add(action);
+
+    const unbind = () => {
+      keyBinds.delete(action);
+
+      if (keyBinds.size === 0) {
+        this.bindings.delete(key);
+      }
+    };
+
+    return unbind;
+  }
+
+  public subscribe(action: ACTION, cb: () => void): () => void {
+    if (!this.callbacks.has(action)) {
+      this.callbacks.set(action, new Set());
+    }
+
+    const subscribers = this.callbacks.get(action)!;
+    subscribers.add(cb);
+
+    const unsubscribe = () => {
+      subscribers.delete(cb);
+
+      if (subscribers.size === 0) {
+        this.callbacks.delete(action);
+      }
+    };
+
+    return unsubscribe;
+  }
+
+  private emit(action: ACTION): void {
+    this.callbacks.get(action)?.forEach((cb) => cb());
+  }
+
+  public destroy(): void {
+    this.keyboardUnsubscribe();
+    this.keyboard.destroy();
+
+    this.callbacks.clear();
+    this.bindings.clear();
+  }
+}
