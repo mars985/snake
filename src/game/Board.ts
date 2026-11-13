@@ -82,6 +82,8 @@ export class Board {
     return this.snake.getLength();
   }
 
+  // TODO: move snake forward before getting next head
+  // currently, head can collide with the previous tail position
   update(): BoardEvent {
     this.canTurn = true;
     const currHead = this.snake.getHead();

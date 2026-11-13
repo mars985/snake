@@ -1,5 +1,5 @@
 import type { GridPosition } from "../data/Grid";
-import type { GridStyle } from "../models/GridRenderer";
+import type { GridStyle } from "../game/GridRenderer";
 
 export const rows = 20;
 export const cols = 40;

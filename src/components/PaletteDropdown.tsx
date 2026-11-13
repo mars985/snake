@@ -4,7 +4,7 @@ import {
   paletteNames,
   type Palette,
   type PaletteName,
-} from "./config/palettes.config";
+} from "../config/palettes.config";
 
 interface PaletteDropdownProps {
   selected: PaletteName;
