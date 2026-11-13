@@ -1,21 +1,21 @@
 import type { ACTION } from "./actions";
-import type { KeyboardInput } from "./KeyboardInput";
+import type { InputSource } from "./InputSource";
 import type { KEYS } from "./keys";
 
 interface ControlsOptions {
-  keyboard: KeyboardInput;
+  inputs: InputSource[];
 }
 
 export class Controls {
   private bindings = new Map<KEYS, Set<ACTION>>();
   private callbacks = new Map<ACTION, Set<() => void>>();
 
-  private keyboard: KeyboardInput;
-  private keyboardUnsubscribe: () => void;
+  private unsubscribers: (() => void)[];
 
   constructor(options: ControlsOptions) {
-    this.keyboard = options.keyboard;
-    this.keyboardUnsubscribe = this.keyboard.subscribe(this.handleInput);
+    this.unsubscribers = options.inputs.map((input) =>
+      input.subscribe(this.handleInput),
+    );
   }
 
   private handleInput = (key: KEYS): boolean => {
@@ -69,7 +69,8 @@ export class Controls {
   }
 
   public destroy(): void {
-    this.keyboardUnsubscribe();
+    this.unsubscribers.forEach((unsubscribe) => unsubscribe());
+    this.unsubscribers = [];
 
     this.callbacks.clear();
     this.bindings.clear();

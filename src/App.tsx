@@ -17,6 +17,7 @@ import {
 import PaletteDropdown from "./PaletteDropdown";
 import { Controls } from "./input/Controls";
 import { KeyboardInput } from "./input/KeyboardInput";
+import { GamepadInput } from "./input/GamepadInput";
 
 function App() {
   const [ticks, setTicks] = useState(0);
@@ -34,6 +35,7 @@ function App() {
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const keyboardRef = useRef<KeyboardInput | null>(null);
+  const gamepadRef = useRef<GamepadInput | null>(null);
   const controlsRef = useRef<Controls | null>(null);
   const gameRef = useRef<Game | null>(null);
 
@@ -46,7 +48,11 @@ function App() {
 
     keyboardRef.current = new KeyboardInput();
 
-    controlsRef.current = new Controls({ keyboard: keyboardRef.current });
+    gamepadRef.current = new GamepadInput();
+
+    controlsRef.current = new Controls({
+      inputs: [keyboardRef.current, gamepadRef.current],
+    });
 
     gameRef.current = new Game({
       rows,
@@ -68,6 +74,7 @@ function App() {
 
     return () => {
       keyboardRef.current?.destroy();
+      gamepadRef.current?.destroy();
       controlsRef.current?.destroy();
       gameRef.current?.destroy();
     };

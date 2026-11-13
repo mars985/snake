@@ -1,8 +1,6 @@
 import { Board, type BoardEvent, type BoardOptions } from "./Board";
-import { DirectionalControls, ActionControls } from "./Controls";
 import { GridRenderer, type GridRendererOptions } from "./GridRenderer";
 import { Directions } from "./Snake";
-import { GamepadHandler } from "./GamepadHandler";
 import type { Palette } from "../config/palettes.config";
 import type { Controls } from "../input/Controls";
 
@@ -34,8 +32,6 @@ export class Game {
   private setTicks: (ticks: number) => void;
 
   private controls: Controls;
-  // private gamepadHandler = new GamepadHandler();
-  // private gamepadFrameId: number | null = null;
 
   //#region setup
   constructor(options: GameOptions) {
@@ -61,10 +57,6 @@ export class Game {
 
     this.board.addFruit();
     this.setSpeed(this.ticksPerSec);
-    // this.addDirectionalInputs();
-    // this.addActionInputs();
-    // this.addKeyboardInputs();
-    // this.startGamepadPolling();
 
     this.render();
   }
@@ -74,6 +66,11 @@ export class Game {
     this.controls.bind("Enter", "play");
     this.controls.bind("Space", "toggle");
     this.controls.bind("KeyR", "reset");
+
+    this.controls.bind("ButtonStart", "pause");
+    this.controls.bind("ButtonA", "play");
+    this.controls.bind("ButtonB", "toggle");
+    this.controls.bind("ButtonSelect", "reset");
 
     this.controls.subscribe("pause", () => this.pause());
     this.controls.subscribe("play", () =>
@@ -94,6 +91,21 @@ export class Game {
     this.controls.bind("ArrowLeft", "moveLeft1");
     this.controls.bind("ArrowDown", "moveDown1");
     this.controls.bind("ArrowRight", "moveRight1");
+
+    this.controls.bind("DPadUp", "moveUp1");
+    this.controls.bind("DPadLeft", "moveLeft1");
+    this.controls.bind("DPadDown", "moveDown1");
+    this.controls.bind("DPadRight", "moveRight1");
+
+    this.controls.bind("LeftJoystickY-", "moveUp1");
+    this.controls.bind("LeftJoystickX-", "moveLeft1");
+    this.controls.bind("LeftJoystickY+", "moveDown1");
+    this.controls.bind("LeftJoystickX+", "moveRight1");
+
+    this.controls.bind("RightJoystickY-", "moveUp1");
+    this.controls.bind("RightJoystickX-", "moveLeft1");
+    this.controls.bind("RightJoystickY+", "moveDown1");
+    this.controls.bind("RightJoystickX+", "moveRight1");
 
     this.controls.subscribe("moveUp1", () =>
       this.board.setSnakeDirection(Directions.up),
@@ -133,12 +145,6 @@ export class Game {
 
   destroy(): void {
     this.pause();
-    // window.removeEventListener("keydown", this.handleKeyDown);
-
-    // if (this.gamepadFrameId !== null) {
-    //   cancelAnimationFrame(this.gamepadFrameId);
-    //   this.gamepadFrameId = null;
-    // }
   }
   //#endregion
 
@@ -214,78 +220,10 @@ export class Game {
   //#endregion
 
   //#region gamepad
-  // private pollGamepad = (): void => {
-  //   this.gamepadHandler.poll(this.keyMap);
-  //   this.gamepadFrameId = requestAnimationFrame(this.pollGamepad);
-  // };
 
-  // private startGamepadPolling(): void {
-  //   if (this.gamepadFrameId !== null) return;
-
-  //   this.gamepadFrameId = requestAnimationFrame(this.pollGamepad);
-  // }
   //#endregion
 
   //#region inputs
-  // private readonly keyMap: Record<string, () => void> = {};
 
-  // private addActionInputs(): void {
-  //   const actions: Record<keyof typeof ActionControls, () => void> = {
-  //     pause: () => this.pause(),
-  //     togglePause: () => this.togglePause(),
-  //     play: () => {
-  //       if (this.died) this.reset();
-  //       else this.play();
-  //     },
-  //     reset: () => {
-  //       if (this.paused || this.died) this.reset();
-  //     },
-  //   };
-
-  //   for (const [actionName, keys] of Object.entries(ActionControls)) {
-  //     for (const key of keys) {
-  //       this.keyMap[key] = actions[actionName as keyof typeof ActionControls];
-  //     }
-  //   }
-  // }
-
-  // private addDirectionalInputs(): void {
-  //   const directionalControls = [
-  //     [DirectionalControls.up, Directions.up],
-  //     [DirectionalControls.right, Directions.right],
-  //     [DirectionalControls.down, Directions.down],
-  //     [DirectionalControls.left, Directions.left],
-  //   ] as const;
-
-  //   for (const [keys, direction] of directionalControls) {
-  //     for (const key of keys) {
-  //       this.keyMap[key] = () => {
-  //         this.board.setSnakeDirection(direction);
-  //       };
-  //     }
-  //   }
-  // }
-
-  // private readonly handleKeyDown = (event: KeyboardEvent) => {
-  //   const target = event.target as HTMLElement | null;
-  //   if (
-  //     target &&
-  //     (target.tagName === "INPUT" ||
-  //       target.tagName === "TEXTAREA" ||
-  //       target.isContentEditable)
-  //   ) {
-  //     return;
-  //   }
-
-  //   const action = this.keyMap[event.code];
-
-  //   if (!action) return;
-
-  //   action();
-  // };
-
-  // private addKeyboardInputs() {
-  //   window.addEventListener("keydown", this.handleKeyDown);
-  // }
   //#endregion
 }

@@ -1,6 +1,7 @@
 import type { KEYS } from "./keys";
+import type { InputSource } from "./InputSource";
 
-export class KeyboardInput {
+export class KeyboardInput implements InputSource {
   private callbacks = new Set<(key: KEYS) => boolean>();
 
   constructor() {
