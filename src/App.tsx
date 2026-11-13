@@ -15,6 +15,8 @@ import {
 } from "./config/game.config";
 
 import PaletteDropdown from "./PaletteDropdown";
+import { Controls } from "./input/Controls";
+import { KeyboardInput } from "./input/KeyboardInput";
 
 function App() {
   const [ticks, setTicks] = useState(0);
@@ -31,6 +33,8 @@ function App() {
   });
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const keyboardRef = useRef<KeyboardInput | null>(null);
+  const controlsRef = useRef<Controls | null>(null);
   const gameRef = useRef<Game | null>(null);
 
   useEffect(() => {
@@ -39,6 +43,10 @@ function App() {
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+
+    keyboardRef.current = new KeyboardInput();
+
+    controlsRef.current = new Controls({ keyboard: keyboardRef.current });
 
     gameRef.current = new Game({
       rows,
@@ -55,9 +63,12 @@ function App() {
       setPaused,
       setLength,
       setTicks,
+      controls: controlsRef.current,
     });
 
     return () => {
+      keyboardRef.current?.destroy();
+      controlsRef.current?.destroy();
       gameRef.current?.destroy();
     };
   }, []);
