@@ -1,11 +1,17 @@
 import { Board, type BoardEvent, type BoardOptions } from "./Board";
-import { DirectionalControls, ActionControls } from "./Controls";
 import { GridRenderer, type GridRendererOptions } from "./GridRenderer";
 import { Directions } from "./Snake";
-import { GamepadHandler } from "./GamepadHandler";
 import type { Palette } from "../config/palettes.config";
+import type { Controls } from "../input/Controls";
+import {
+  gameControlBindings,
+  MOVEMENT_DIRECTIONS,
+  player1Movement,
+  type MovementBindings,
+} from "../input/bindings";
 
 export interface GameOptions extends BoardOptions, GridRendererOptions {
+  controls: Controls;
   paused?: boolean;
   ticksPerSec?: number;
   setPaused?: (paused: boolean) => void;
@@ -31,8 +37,8 @@ export class Game {
   private setLength: (length: number) => void;
   private setTicks: (ticks: number) => void;
 
-  private gamepadHandler = new GamepadHandler();
-  private gamepadFrameId: number | null = null;
+  private controls: Controls;
+  private unsubscribers: (() => void)[] = [];
 
   //#region setup
   constructor(options: GameOptions) {
@@ -52,14 +58,43 @@ export class Game {
     this.setLength = options.setLength ?? (() => {});
     this.setTicks = options.setTicks ?? (() => {});
 
+    this.controls = options.controls;
+    this.setupControls();
+
     this.board.addFruit();
     this.setSpeed(this.ticksPerSec);
-    this.addDirectionalInputs();
-    this.addActionInputs();
-    this.addKeyboardInputs();
-    this.startGamepadPolling();
 
     this.render();
+  }
+
+  destroy(): void {
+    this.pause();
+    this.unsubscribers.forEach((unsubscribe) => unsubscribe());
+    this.unsubscribers = [];
+  }
+  //#endregion
+
+  //#region game controls
+  play(): void {
+    if (!this.paused || this.loopId !== null || this.died) return;
+
+    this.paused = false;
+    this.setPaused(this.paused);
+    this.loopId = setTimeout(() => this.loop(), 1000 / this.ticksPerSec);
+  }
+
+  pause(): void {
+    this.paused = true;
+    if (this.loopId !== null) {
+      clearTimeout(this.loopId);
+      this.loopId = null;
+      this.setPaused(this.paused);
+    }
+  }
+
+  togglePause(): void {
+    if (this.paused) this.play();
+    else this.pause();
   }
 
   reset(): void {
@@ -83,39 +118,9 @@ export class Game {
 
     this.render();
   }
-
-  destroy(): void {
-    this.pause();
-    window.removeEventListener("keydown", this.handleKeyDown);
-
-    if (this.gamepadFrameId !== null) {
-      cancelAnimationFrame(this.gamepadFrameId);
-      this.gamepadFrameId = null;
-    }
-  }
   //#endregion
 
-  //#region game controls
-  play(): void {
-    if (!this.paused || this.loopId !== null || this.died) return;
-
-    this.paused = false;
-    this.setPaused(this.paused);
-    this.loopId = setTimeout(() => this.loop(), 1000 / this.ticksPerSec);
-  }
-  pause(): void {
-    this.paused = true;
-    if (this.loopId !== null) {
-      clearTimeout(this.loopId);
-      this.loopId = null;
-      this.setPaused(this.paused);
-    }
-  }
-  togglePause(): void {
-    if (this.paused) this.play();
-    else this.pause();
-  }
-
+  //#region settings
   setSpeed(ticksPerSec: number): void {
     const pausedState = this.paused;
     this.pause();
@@ -129,19 +134,6 @@ export class Game {
     this.options.palette = palette;
     this.renderer.setPalette(palette);
     this.render();
-  }
-  //#endregion
-
-  //#region gamepad
-  private pollGamepad = (): void => {
-    this.gamepadHandler.poll(this.keyMap);
-    this.gamepadFrameId = requestAnimationFrame(this.pollGamepad);
-  };
-
-  private startGamepadPolling(): void {
-    if (this.gamepadFrameId !== null) return;
-
-    this.gamepadFrameId = requestAnimationFrame(this.pollGamepad);
   }
   //#endregion
 
@@ -180,65 +172,45 @@ export class Game {
   //#endregion
 
   //#region inputs
-  private readonly keyMap: Record<string, () => void> = {};
-
-  private addActionInputs(): void {
-    const actions: Record<keyof typeof ActionControls, () => void> = {
-      pause: () => this.pause(),
-      togglePause: () => this.togglePause(),
-      play: () => {
-        if (this.died) this.reset();
-        else this.play();
-      },
-      reset: () => {
-        if (this.paused || this.died) this.reset();
-      },
-    };
-
-    for (const [actionName, keys] of Object.entries(ActionControls)) {
-      for (const key of keys) {
-        this.keyMap[key] = actions[actionName as keyof typeof ActionControls];
-      }
-    }
+  private setupControls(): void {
+    this.unsubscribers.push(
+      ...this.bindGameControls(),
+      ...this.bindPlayer1Movement(),
+    );
   }
 
-  private addDirectionalInputs(): void {
-    const directionalControls = [
-      [DirectionalControls.up, Directions.up],
-      [DirectionalControls.right, Directions.right],
-      [DirectionalControls.down, Directions.down],
-      [DirectionalControls.left, Directions.left],
-    ] as const;
+  private bindGameControls(): (() => void)[] {
+    const c = this.controls;
+    return [
+      ...gameControlBindings.map(([key, action]) => c.bind(key, action)),
 
-    for (const [keys, direction] of directionalControls) {
-      for (const key of keys) {
-        this.keyMap[key] = () => {
-          this.board.setSnakeDirection(direction);
-        };
-      }
-    }
+      c.subscribe("pause", () => this.pause()),
+      c.subscribe("play", () => (this.died ? this.reset() : this.play())),
+      c.subscribe("toggle", () => this.togglePause()),
+      c.subscribe("reset", () => (this.paused || this.died) && this.reset()),
+    ];
   }
 
-  private readonly handleKeyDown = (event: KeyboardEvent) => {
-    const target = event.target as HTMLElement | null;
-    if (
-      target &&
-      (target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.isContentEditable)
-    ) {
-      return;
+  private bindPlayer1Movement(): (() => void)[] {
+    return this.bindMovement(player1Movement);
+  }
+
+  private bindMovement({ keys, actions }: MovementBindings): (() => void)[] {
+    const unsubscribers: (() => void)[] = [];
+
+    for (const dir of MOVEMENT_DIRECTIONS) {
+      for (const key of keys[dir]) {
+        unsubscribers.push(this.controls.bind(key, actions[dir]));
+      }
+
+      unsubscribers.push(
+        this.controls.subscribe(actions[dir], () =>
+          this.board.setSnakeDirection(Directions[dir]),
+        ),
+      );
     }
 
-    const action = this.keyMap[event.code];
-
-    if (!action) return;
-
-    action();
-  };
-
-  private addKeyboardInputs() {
-    window.addEventListener("keydown", this.handleKeyDown);
+    return unsubscribers;
   }
   //#endregion
 }

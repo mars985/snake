@@ -1,5 +1,5 @@
 import type { GridPosition } from "../data/Grid";
-import type { GridStyle } from "../models/GridRenderer";
+import type { GridStyle } from "../game/GridRenderer";
 
 export const rows = 20;
 export const cols = 40;
@@ -19,6 +19,17 @@ export const difficulty = {
   medium: 10,
   hard: 15,
 };
+
+export type DifficultyName = keyof typeof difficulty;
+
+export const difficultyColors: Record<DifficultyName, string> = {
+  easy: "text-green-400",
+  medium: "text-red-400",
+  hard: "text-purple-400",
+};
+
+export const difficultyNames = Object.keys(difficulty) as DifficultyName[];
+export const difficultyLevels = Object.values(difficulty);
 
 export const snakeHeadStartPosition: GridPosition = {
   row: 3,

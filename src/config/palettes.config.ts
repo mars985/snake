@@ -1,4 +1,4 @@
-import type { BoardStateName } from "../models/Board";
+import type { BoardStateName } from "../game/Board";
 
 export type Palette = Record<BoardStateName, string>;
 
@@ -76,3 +76,5 @@ export const palettes = {
 } satisfies Record<string, Palette>;
 
 export type PaletteName = keyof typeof palettes;
+
+export const paletteNames = Object.keys(palettes) as PaletteName[];

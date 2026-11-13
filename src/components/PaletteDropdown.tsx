@@ -1,16 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import {
   palettes,
+  paletteNames,
   type Palette,
   type PaletteName,
-} from "./config/palettes.config";
+} from "../config/palettes.config";
 
 interface PaletteDropdownProps {
-  value: PaletteName;
-  onChange: (name: PaletteName) => void;
+  selected: PaletteName;
+  onSelect: (name: PaletteName) => void;
+  isOpen: boolean;
+  setOpen: (open: boolean) => void;
 }
-
-const paletteNames = Object.keys(palettes) as PaletteName[];
 
 const capitalize = (s: string) => s[0].toUpperCase() + s.slice(1);
 
@@ -24,12 +25,16 @@ function Swatches({ palette }: { palette: Palette }) {
   );
 }
 
-function PaletteDropdown({ value, onChange }: PaletteDropdownProps) {
-  const [open, setOpen] = useState(false);
+function PaletteDropdown({
+  selected,
+  onSelect,
+  isOpen,
+  setOpen,
+}: PaletteDropdownProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!isOpen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
       if (!containerRef.current?.contains(event.target as Node)) {
@@ -39,10 +44,10 @@ function PaletteDropdown({ value, onChange }: PaletteDropdownProps) {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
+  }, [isOpen, setOpen]);
 
   const select = (name: PaletteName) => {
-    onChange(name);
+    onSelect(name);
     setOpen(false);
   };
 
@@ -51,22 +56,22 @@ function PaletteDropdown({ value, onChange }: PaletteDropdownProps) {
       <button
         className="hover:underline"
         onMouseDown={(e) => e.preventDefault()}
-        onClick={() => setOpen(!open)}
+        onClick={() => setOpen(!isOpen)}
       >
         Palette:{" "}
-        <span style={{ color: palettes[value].snakeBody }}>
-          {capitalize(value)}
+        <span style={{ color: palettes[selected].snakeBody }}>
+          {capitalize(selected)}
         </span>
       </button>
 
-      {open && (
+      {isOpen && (
         <div className="absolute right-0 top-full mt-1 z-10 bg-black py-1">
           {paletteNames.map((name) => (
             <button
               key={name}
               className="w-full flex items-center justify-between gap-4 px-3 py-0.5 hover:underline"
               style={{
-                color: name === value ? palettes[name].snakeBody : "white",
+                color: name === selected ? palettes[name].snakeBody : "white",
               }}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => select(name)}
