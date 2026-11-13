@@ -10,6 +10,9 @@ import {
 } from "./config/palettes.config";
 import {
   difficulty,
+  difficultyLevels,
+  difficultyNames,
+  type DifficultyName,
   rows,
   cols,
   height,
@@ -32,7 +35,13 @@ function App() {
   const [highScore, setHighScore] = useState<number>(
     () => Number(localStorage.getItem("highScore")) || 0,
   );
-  const [speed, setSpeed] = useState(difficulty.medium);
+  const [difficultyIndex, setDifficultyIndex] = useState<number>(() => {
+    const saved = localStorage.getItem("difficulty");
+    const index = difficultyNames.indexOf(saved as DifficultyName);
+    return index >= 0 ? index : difficultyNames.indexOf("medium");
+  });
+  const difficultyName = difficultyNames[difficultyIndex];
+  const speed = difficultyLevels[difficultyIndex];
   const [paletteIndex, setPaletteIndex] = useState<number>(() => {
     const saved = localStorage.getItem("palette");
     const index = paletteNames.indexOf(saved as PaletteName);
@@ -92,23 +101,36 @@ function App() {
     const controls = controlsRef.current;
     if (!controls) return;
 
-    const count = paletteNames.length;
+    const paletteCount = paletteNames.length;
+    const difficultyCount = difficultyLevels.length;
 
     const unsubscribers = [
       ...uiBindings.map(([key, action]) => controls.bind(key, action)),
+
       controls.subscribe("paletteNext", () =>
-        setPaletteIndex((i) => (i + 1) % count),
+        setPaletteIndex((i) => (i + 1) % paletteCount),
       ),
       controls.subscribe("palettePrev", () =>
-        setPaletteIndex((i) => (i - 1 + count) % count),
+        setPaletteIndex((i) => (i - 1 + paletteCount) % paletteCount),
       ),
       controls.subscribe("paletteToggle", () =>
         setPaletteOpen((open) => !open),
+      ),
+      controls.subscribe("difficultyUp", () =>
+        setDifficultyIndex((i) => Math.min(i + 1, difficultyCount - 1)),
+      ),
+      controls.subscribe("difficultyDown", () =>
+        setDifficultyIndex((i) => Math.max(i - 1, 0)),
       ),
     ];
 
     return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
   }, []);
+
+  useEffect(() => {
+    gameRef.current?.setSpeed(speed);
+    localStorage.setItem("difficulty", difficultyName);
+  }, [speed, difficultyName]);
 
   useEffect(() => {
     gameRef.current?.setPalette(palettes[paletteName]);
@@ -123,8 +145,7 @@ function App() {
   }, [length, highScore]);
 
   const handleSpeed = (val: number) => {
-    gameRef.current?.setSpeed(val);
-    setSpeed(val);
+    setDifficultyIndex(difficultyLevels.indexOf(val));
   };
 
   const handlePalette = (name: PaletteName) => {

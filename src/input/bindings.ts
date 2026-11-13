@@ -61,4 +61,7 @@ export const uiBindings: readonly (readonly [KEYS, ACTION])[] = [
   ["KeyQ", "palettePrev"],
   ["KeyE", "paletteNext"],
   ["KeyP", "paletteToggle"],
+
+  ["KeyZ", "difficultyDown"],
+  ["KeyX", "difficultyUp"],
 ];

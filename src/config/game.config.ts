@@ -20,6 +20,11 @@ export const difficulty = {
   hard: 15,
 };
 
+export type DifficultyName = keyof typeof difficulty;
+
+export const difficultyNames = Object.keys(difficulty) as DifficultyName[];
+export const difficultyLevels = Object.values(difficulty);
+
 export const snakeHeadStartPosition: GridPosition = {
   row: 3,
   col: 3,
