@@ -3,6 +3,12 @@ import { GridRenderer, type GridRendererOptions } from "./GridRenderer";
 import { Directions } from "./Snake";
 import type { Palette } from "../config/palettes.config";
 import type { Controls } from "../input/Controls";
+import {
+  gameControlBindings,
+  MOVEMENT_DIRECTIONS,
+  player1Movement,
+  type MovementBindings,
+} from "../input/bindings";
 
 export interface GameOptions extends BoardOptions, GridRendererOptions {
   controls: Controls;
@@ -32,6 +38,7 @@ export class Game {
   private setTicks: (ticks: number) => void;
 
   private controls: Controls;
+  private unsubscribers: (() => void)[] = [];
 
   //#region setup
   constructor(options: GameOptions) {
@@ -52,8 +59,7 @@ export class Game {
     this.setTicks = options.setTicks ?? (() => {});
 
     this.controls = options.controls;
-
-    this.setControls();
+    this.setupControls();
 
     this.board.addFruit();
     this.setSpeed(this.ticksPerSec);
@@ -61,64 +67,34 @@ export class Game {
     this.render();
   }
 
-  setControls() {
-    this.controls.bind("Escape", "pause");
-    this.controls.bind("Enter", "play");
-    this.controls.bind("Space", "toggle");
-    this.controls.bind("KeyR", "reset");
+  destroy(): void {
+    this.pause();
+    this.unsubscribers.forEach((unsubscribe) => unsubscribe());
+    this.unsubscribers = [];
+  }
+  //#endregion
 
-    this.controls.bind("ButtonStart", "pause");
-    this.controls.bind("ButtonA", "play");
-    this.controls.bind("ButtonB", "toggle");
-    this.controls.bind("ButtonSelect", "reset");
+  //#region game controls
+  play(): void {
+    if (!this.paused || this.loopId !== null || this.died) return;
 
-    this.controls.subscribe("pause", () => this.pause());
-    this.controls.subscribe("play", () =>
-      this.died ? this.reset() : this.play(),
-    );
-    this.controls.subscribe("toggle", () => this.togglePause());
-    this.controls.subscribe(
-      "reset",
-      () => (this.paused || this.died) && this.reset(),
-    );
+    this.paused = false;
+    this.setPaused(this.paused);
+    this.loopId = setTimeout(() => this.loop(), 1000 / this.ticksPerSec);
+  }
 
-    this.controls.bind("KeyW", "moveUp1");
-    this.controls.bind("KeyA", "moveLeft1");
-    this.controls.bind("KeyS", "moveDown1");
-    this.controls.bind("KeyD", "moveRight1");
+  pause(): void {
+    this.paused = true;
+    if (this.loopId !== null) {
+      clearTimeout(this.loopId);
+      this.loopId = null;
+      this.setPaused(this.paused);
+    }
+  }
 
-    this.controls.bind("ArrowUp", "moveUp1");
-    this.controls.bind("ArrowLeft", "moveLeft1");
-    this.controls.bind("ArrowDown", "moveDown1");
-    this.controls.bind("ArrowRight", "moveRight1");
-
-    this.controls.bind("DPadUp", "moveUp1");
-    this.controls.bind("DPadLeft", "moveLeft1");
-    this.controls.bind("DPadDown", "moveDown1");
-    this.controls.bind("DPadRight", "moveRight1");
-
-    this.controls.bind("LeftJoystickY-", "moveUp1");
-    this.controls.bind("LeftJoystickX-", "moveLeft1");
-    this.controls.bind("LeftJoystickY+", "moveDown1");
-    this.controls.bind("LeftJoystickX+", "moveRight1");
-
-    this.controls.bind("RightJoystickY-", "moveUp1");
-    this.controls.bind("RightJoystickX-", "moveLeft1");
-    this.controls.bind("RightJoystickY+", "moveDown1");
-    this.controls.bind("RightJoystickX+", "moveRight1");
-
-    this.controls.subscribe("moveUp1", () =>
-      this.board.setSnakeDirection(Directions.up),
-    );
-    this.controls.subscribe("moveRight1", () =>
-      this.board.setSnakeDirection(Directions.right),
-    );
-    this.controls.subscribe("moveDown1", () =>
-      this.board.setSnakeDirection(Directions.down),
-    );
-    this.controls.subscribe("moveLeft1", () =>
-      this.board.setSnakeDirection(Directions.left),
-    );
+  togglePause(): void {
+    if (this.paused) this.play();
+    else this.pause();
   }
 
   reset(): void {
@@ -142,33 +118,9 @@ export class Game {
 
     this.render();
   }
-
-  destroy(): void {
-    this.pause();
-  }
   //#endregion
 
-  //#region game controls
-  play(): void {
-    if (!this.paused || this.loopId !== null || this.died) return;
-
-    this.paused = false;
-    this.setPaused(this.paused);
-    this.loopId = setTimeout(() => this.loop(), 1000 / this.ticksPerSec);
-  }
-  pause(): void {
-    this.paused = true;
-    if (this.loopId !== null) {
-      clearTimeout(this.loopId);
-      this.loopId = null;
-      this.setPaused(this.paused);
-    }
-  }
-  togglePause(): void {
-    if (this.paused) this.play();
-    else this.pause();
-  }
-
+  //#region settings
   setSpeed(ticksPerSec: number): void {
     const pausedState = this.paused;
     this.pause();
@@ -219,11 +171,46 @@ export class Game {
   }
   //#endregion
 
-  //#region gamepad
-
-  //#endregion
-
   //#region inputs
+  private setupControls(): void {
+    this.unsubscribers.push(
+      ...this.bindGameControls(),
+      ...this.bindPlayer1Movement(),
+    );
+  }
 
+  private bindGameControls(): (() => void)[] {
+    const c = this.controls;
+    return [
+      ...gameControlBindings.map(([key, action]) => c.bind(key, action)),
+
+      c.subscribe("pause", () => this.pause()),
+      c.subscribe("play", () => (this.died ? this.reset() : this.play())),
+      c.subscribe("toggle", () => this.togglePause()),
+      c.subscribe("reset", () => (this.paused || this.died) && this.reset()),
+    ];
+  }
+
+  private bindPlayer1Movement(): (() => void)[] {
+    return this.bindMovement(player1Movement);
+  }
+
+  private bindMovement({ keys, actions }: MovementBindings): (() => void)[] {
+    const unsubscribers: (() => void)[] = [];
+
+    for (const dir of MOVEMENT_DIRECTIONS) {
+      for (const key of keys[dir]) {
+        unsubscribers.push(this.controls.bind(key, actions[dir]));
+      }
+
+      unsubscribers.push(
+        this.controls.subscribe(actions[dir], () =>
+          this.board.setSnakeDirection(Directions[dir]),
+        ),
+      );
+    }
+
+    return unsubscribers;
+  }
   //#endregion
 }
