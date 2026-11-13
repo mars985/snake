@@ -76,3 +76,5 @@ export const palettes = {
 } satisfies Record<string, Palette>;
 
 export type PaletteName = keyof typeof palettes;
+
+export const paletteNames = Object.keys(palettes) as PaletteName[];

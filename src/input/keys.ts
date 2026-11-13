@@ -1,8 +1,10 @@
 export type WASD_KEYS = "KeyW" | "KeyA" | "KeyS" | "KeyD";
 export type ARROW_KEYS = "ArrowUp" | "ArrowLeft" | "ArrowDown" | "ArrowRight";
 export type GAME_CONTROL_KEYS = "Escape" | "Space" | "Enter" | "KeyR";
+export type PALETTE_KEYS = "KeyQ" | "KeyE" | "KeyP";
 
-export type KEYBOARD_KEYS = WASD_KEYS | ARROW_KEYS | GAME_CONTROL_KEYS;
+export type KEYBOARD_KEYS =
+  WASD_KEYS | ARROW_KEYS | GAME_CONTROL_KEYS | PALETTE_KEYS;
 
 export type GAMEPAD_DPAD_KEYS =
   "DPadUp" | "DPadRight" | "DPadDown" | "DPadLeft";

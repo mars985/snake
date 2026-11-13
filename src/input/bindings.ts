@@ -56,3 +56,9 @@ export const player1Movement: MovementBindings = {
     left: "moveLeft1",
   },
 };
+
+export const uiBindings: readonly (readonly [KEYS, ACTION])[] = [
+  ["KeyQ", "palettePrev"],
+  ["KeyE", "paletteNext"],
+  ["KeyP", "paletteToggle"],
+];

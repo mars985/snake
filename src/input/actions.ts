@@ -6,7 +6,7 @@ export type DIRECTIONAL_ACTION_PLAYER_2 =
 
 export type DIFFICULTY_ACTION = "difficultyUp" | "difficultyDown";
 
-export type PALETTE_ACTION = "paletteNext" | "palettePrev";
+export type PALETTE_ACTION = "paletteNext" | "palettePrev" | "paletteToggle";
 
 export type GAME_CONTROL_ACTION = "pause" | "play" | "toggle" | "reset";
 

@@ -3,7 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import { Game } from "./models/Game";
 import { Directions } from "./models/Snake";
 
-import { palettes, type PaletteName } from "./config/palettes.config";
+import {
+  palettes,
+  paletteNames,
+  type PaletteName,
+} from "./config/palettes.config";
 import {
   difficulty,
   rows,
@@ -18,6 +22,7 @@ import PaletteDropdown from "./PaletteDropdown";
 import { Controls } from "./input/Controls";
 import { KeyboardInput } from "./input/KeyboardInput";
 import { GamepadInput } from "./input/GamepadInput";
+import { uiBindings } from "./input/bindings";
 
 function App() {
   const [ticks, setTicks] = useState(0);
@@ -28,10 +33,13 @@ function App() {
     () => Number(localStorage.getItem("highScore")) || 0,
   );
   const [speed, setSpeed] = useState(difficulty.medium);
-  const [paletteName, setPaletteName] = useState<PaletteName>(() => {
+  const [paletteIndex, setPaletteIndex] = useState<number>(() => {
     const saved = localStorage.getItem("palette");
-    return saved && saved in palettes ? (saved as PaletteName) : "emerald";
+    const index = paletteNames.indexOf(saved as PaletteName);
+    return index >= 0 ? index : paletteNames.indexOf("emerald");
   });
+  const paletteName = paletteNames[paletteIndex];
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const keyboardRef = useRef<KeyboardInput | null>(null);
@@ -81,6 +89,33 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+
+    const count = paletteNames.length;
+
+    const unsubscribers = [
+      ...uiBindings.map(([key, action]) => controls.bind(key, action)),
+      controls.subscribe("paletteNext", () =>
+        setPaletteIndex((i) => (i + 1) % count),
+      ),
+      controls.subscribe("palettePrev", () =>
+        setPaletteIndex((i) => (i - 1 + count) % count),
+      ),
+      controls.subscribe("paletteToggle", () =>
+        setPaletteOpen((open) => !open),
+      ),
+    ];
+
+    return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
+  }, []);
+
+  useEffect(() => {
+    gameRef.current?.setPalette(palettes[paletteName]);
+    localStorage.setItem("palette", paletteName);
+  }, [paletteName]);
+
+  useEffect(() => {
     if (length > highScore) {
       setHighScore(length);
       localStorage.setItem("highScore", length.toString());
@@ -93,9 +128,7 @@ function App() {
   };
 
   const handlePalette = (name: PaletteName) => {
-    gameRef.current?.setPalette(palettes[name]);
-    setPaletteName(name);
-    localStorage.setItem("palette", name);
+    setPaletteIndex(paletteNames.indexOf(name));
   };
 
   return (
@@ -127,7 +160,12 @@ function App() {
           </span>
         </div>
 
-        <PaletteDropdown value={paletteName} onChange={handlePalette} />
+        <PaletteDropdown
+          selected={paletteName}
+          onSelect={handlePalette}
+          isOpen={paletteOpen}
+          setOpen={setPaletteOpen}
+        />
       </div>
 
       <div className="flex justify-center">
