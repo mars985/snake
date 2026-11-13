@@ -12,7 +12,7 @@ import {
   difficulty,
   difficultyLevels,
   difficultyNames,
-  type DifficultyName,
+  difficultyColors,
   rows,
   cols,
   height,
@@ -22,12 +22,15 @@ import {
 } from "./config/game.config";
 
 import PaletteDropdown from "./PaletteDropdown";
+import Overlay from "./Overlay";
+import { usePersistedChoice } from "./hooks/usePersistedChoice";
 import { Controls } from "./input/Controls";
 import { KeyboardInput } from "./input/KeyboardInput";
 import { GamepadInput } from "./input/GamepadInput";
 import { uiBindings } from "./input/bindings";
 
 function App() {
+  //#region game properties
   const [ticks, setTicks] = useState(0);
   const [paused, setPaused] = useState(true);
   const [death, setDeath] = useState(false);
@@ -35,24 +38,26 @@ function App() {
   const [highScore, setHighScore] = useState<number>(
     () => Number(localStorage.getItem("highScore")) || 0,
   );
-  const [difficultyIndex, setDifficultyIndex] = useState<number>(() => {
-    const saved = localStorage.getItem("difficulty");
-    const index = difficultyNames.indexOf(saved as DifficultyName);
-    return index >= 0 ? index : difficultyNames.indexOf("medium");
-  });
-  const difficultyName = difficultyNames[difficultyIndex];
-  const speed = difficultyLevels[difficultyIndex];
-  const [paletteIndex, setPaletteIndex] = useState<number>(() => {
-    const saved = localStorage.getItem("palette");
-    const index = paletteNames.indexOf(saved as PaletteName);
-    return index >= 0 ? index : paletteNames.indexOf("emerald");
-  });
-  const paletteName = paletteNames[paletteIndex];
-  const [paletteOpen, setPaletteOpen] = useState(false);
+  //#endregion
 
+  //#region game settings
+  const [difficultyIndex, setDifficultyIndex] = usePersistedChoice(
+    "difficulty",
+    difficultyNames,
+    "medium",
+  );
+  const speed = difficultyLevels[difficultyIndex];
+
+  const [, setPaletteIndex, paletteName] = usePersistedChoice(
+    "palette",
+    paletteNames,
+    "emerald",
+  );
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  //#endregion
+
+  //#region refs and setup
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const keyboardRef = useRef<KeyboardInput | null>(null);
-  const gamepadRef = useRef<GamepadInput | null>(null);
   const controlsRef = useRef<Controls | null>(null);
   const gameRef = useRef<Game | null>(null);
 
@@ -63,13 +68,9 @@ function App() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    keyboardRef.current = new KeyboardInput();
-
-    gamepadRef.current = new GamepadInput();
-
-    controlsRef.current = new Controls({
-      inputs: [keyboardRef.current, gamepadRef.current],
-    });
+    const keyboard = new KeyboardInput();
+    const gamepad = new GamepadInput();
+    controlsRef.current = new Controls({ inputs: [keyboard, gamepad] });
 
     gameRef.current = new Game({
       rows,
@@ -90,13 +91,15 @@ function App() {
     });
 
     return () => {
-      keyboardRef.current?.destroy();
-      gamepadRef.current?.destroy();
+      keyboard.destroy();
+      gamepad.destroy();
       controlsRef.current?.destroy();
       gameRef.current?.destroy();
     };
   }, []);
+  //#endregion
 
+  //#region controls
   useEffect(() => {
     const controls = controlsRef.current;
     if (!controls) return;
@@ -125,24 +128,7 @@ function App() {
     ];
 
     return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
-  }, []);
-
-  useEffect(() => {
-    gameRef.current?.setSpeed(speed);
-    localStorage.setItem("difficulty", difficultyName);
-  }, [speed, difficultyName]);
-
-  useEffect(() => {
-    gameRef.current?.setPalette(palettes[paletteName]);
-    localStorage.setItem("palette", paletteName);
-  }, [paletteName]);
-
-  useEffect(() => {
-    if (length > highScore) {
-      setHighScore(length);
-      localStorage.setItem("highScore", length.toString());
-    }
-  }, [length, highScore]);
+  }, [setDifficultyIndex, setPaletteIndex]);
 
   const handleSpeed = (val: number) => {
     setDifficultyIndex(difficultyLevels.indexOf(val));
@@ -151,6 +137,24 @@ function App() {
   const handlePalette = (name: PaletteName) => {
     setPaletteIndex(paletteNames.indexOf(name));
   };
+  //#endregion
+
+  //#region side effects
+  useEffect(() => {
+    gameRef.current?.setSpeed(speed);
+  }, [speed]);
+
+  useEffect(() => {
+    gameRef.current?.setPalette(palettes[paletteName]);
+  }, [paletteName]);
+
+  useEffect(() => {
+    if (length > highScore) {
+      setHighScore(length);
+      localStorage.setItem("highScore", length.toString());
+    }
+  }, [length, highScore]);
+  //#endregion
 
   return (
     <div className="bg-zinc-900 w-screen h-screen text-white flex flex-col font-mono select-none">
@@ -158,26 +162,15 @@ function App() {
         <div>
           Difficulty:{" "}
           <span className="inline-flex gap-4">
-            <button
-              className={`hover:underline ${speed === difficulty.easy ? "text-green-400" : "text-white"}`}
-              onClick={() => handleSpeed(difficulty.easy)}
-            >
-              Easy
-            </button>
-
-            <button
-              className={`hover:underline ${speed === difficulty.medium ? "text-red-400" : "text-white"}`}
-              onClick={() => handleSpeed(difficulty.medium)}
-            >
-              Medium
-            </button>
-
-            <button
-              className={`hover:underline ${speed === difficulty.hard ? "text-purple-400" : "text-white"}`}
-              onClick={() => handleSpeed(difficulty.hard)}
-            >
-              Hard
-            </button>
+            {difficultyNames.map((name) => (
+              <button
+                key={name}
+                className={`hover:underline capitalize ${speed === difficulty[name] ? difficultyColors[name] : "text-white"}`}
+                onClick={() => handleSpeed(difficulty[name])}
+              >
+                {name}
+              </button>
+            ))}
           </span>
         </div>
 
@@ -201,21 +194,9 @@ function App() {
         <div className="text-right">High Score: {highScore}</div>
       </div>
 
-      {paused && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="bg-black w-40 h-20 flex items-center justify-center text-xl">
-            PAUSED
-          </div>
-        </div>
-      )}
+      {paused && <Overlay className="text-xl">PAUSED</Overlay>}
 
-      {death && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="bg-black w-40 h-20 flex items-center justify-center text-red-500 text-2xl">
-            YOU DIED
-          </div>
-        </div>
-      )}
+      {death && <Overlay className="text-red-500 text-2xl">YOU DIED</Overlay>}
 
       <a
         className="m-auto hover:underline hover:text-blue-300"
