@@ -4,7 +4,7 @@ import type { KEYS } from "./keys";
 
 interface ControlsOptions {
   keyboard: KeyboardInput;
-};
+}
 
 export class Controls {
   private bindings = new Map<KEYS, Set<ACTION>>();
@@ -18,10 +18,12 @@ export class Controls {
     this.keyboardUnsubscribe = this.keyboard.subscribe(this.handleInput);
   }
 
-  private handleInput = (key: KEYS) => {
+  private handleInput = (key: KEYS): boolean => {
     const actions = this.bindings.get(key);
+    if (!actions || actions.size === 0) return false;
 
-    actions?.forEach((action) => this.emit(action));
+    actions.forEach((action) => this.emit(action));
+    return true;
   };
 
   public bind(key: KEYS, action: ACTION) {
@@ -68,7 +70,6 @@ export class Controls {
 
   public destroy(): void {
     this.keyboardUnsubscribe();
-    this.keyboard.destroy();
 
     this.callbacks.clear();
     this.bindings.clear();

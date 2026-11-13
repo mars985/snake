@@ -1,13 +1,13 @@
 import type { KEYS } from "./keys";
 
 export class KeyboardInput {
-  private callbacks = new Set<(key: KEYS) => void>();
+  private callbacks = new Set<(key: KEYS) => boolean>();
 
   constructor() {
     window.addEventListener("keydown", this.handleKeyDown);
   }
 
-  public subscribe(cb: (key: KEYS) => void): () => void {
+  public subscribe(cb: (key: KEYS) => boolean): () => void {
     this.callbacks.add(cb);
 
     return () => {
@@ -16,8 +16,27 @@ export class KeyboardInput {
   }
 
   private handleKeyDown = (event: KeyboardEvent) => {
-    const code = event.code;
-    this.callbacks.forEach((cb) => cb(code as KEYS));
+    if (event.repeat) return;
+
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+    const target = event.target as HTMLElement | null;
+    if (
+      target &&
+      (target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable)
+    ) {
+      return;
+    }
+
+    let handled = false;
+
+    this.callbacks.forEach((cb) => {
+      if (cb(event.code as KEYS)) handled = true;
+    });
+
+    if (handled) event.preventDefault();
   };
 
   public destroy(): void {
