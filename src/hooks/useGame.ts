@@ -11,6 +11,8 @@ import {
   cols,
   gridStyle,
   snakeHeadStartPosition,
+  snakeStartLength,
+  snakeGrowIncrement
 } from "../config/game.config";
 
 interface UseGameOptions {
@@ -22,7 +24,7 @@ export function useGame({ speed, paletteName }: UseGameOptions) {
   const [ticks, setTicks] = useState(0);
   const [paused, setPaused] = useState(true);
   const [death, setDeath] = useState(false);
-  const [length, setLength] = useState(1);
+  const [length, setLength] = useState(snakeStartLength);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const controlsRef = useRef<Controls | null>(null);
@@ -44,6 +46,7 @@ export function useGame({ speed, paletteName }: UseGameOptions) {
       cols,
       snakeHead: snakeHeadStartPosition,
       snakeLength: length,
+      growIncrement: snakeGrowIncrement,
       snakeDirection: Directions.right,
       ctx,
       palette: palettes[paletteName],

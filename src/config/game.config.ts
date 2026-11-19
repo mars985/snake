@@ -35,3 +35,7 @@ export const snakeHeadStartPosition: GridPosition = {
   row: 3,
   col: 3,
 };
+
+export const snakeStartLength = 1;
+
+export const snakeGrowIncrement = 5;

@@ -82,41 +82,36 @@ export class Board {
     return this.snake.getLength();
   }
 
-  // TODO: move snake forward before getting next head
-  // currently, head can collide with the previous tail position
   update(): BoardEvent {
     this.canTurn = true;
-    const currHead = this.snake.getHead();
-    const nextHead = this.snake.getNextHead();
-    const cellValue = this.grid.getCell(nextHead);
+
+    const { newHead, prevHead, prevTail } = this.snake.moveForward();
+    const nextCell = this.grid.getCell(newHead);
+
+    if (prevTail !== null && !Grid.equals(newHead, prevTail)) {
+      this.grid.setCell(prevTail, BoardStates.empty);
+      this.emptyCells.insert(prevTail); // free prev tail
+    }
+    this.emptyCells.remove(newHead);
+
+    this.grid.setCell(newHead, BoardStates.snakeHead);
+    if (this.snakeLength > 1)
+      this.grid.setCell(prevHead, BoardStates.snakeBody);
 
     let res: BoardEvent;
-
-    if (!(currHead.row === nextHead.row && currHead.col === nextHead.col)) {
-      if (cellValue === BoardStates.snakeBody) {
-        res = { type: "collision", with: "self" };
-      } else if (cellValue === BoardStates.wall || cellValue === -1) {
-        res = { type: "collision", with: "wall" };
-      } else if (cellValue === BoardStates.fruit) {
-        res = { type: "fruit-eaten" };
-        this.snake.grow(this.growIncrement);
-      } else {
+    if (nextCell === BoardStates.fruit) {
+      res = { type: "fruit-eaten" };
+      this.snake.grow(this.growIncrement);
+    } else if (nextCell === BoardStates.wall || nextCell === -1) { // out of bounds
+      res = { type: "collision", with: "wall" };
+    } else if (nextCell === BoardStates.snakeBody) {
+      if (prevTail !== null && Grid.equals(newHead, prevTail)) { // head moves into prev tail
         res = { type: "snake-moved" };
+      } else {
+        res = { type: "collision", with: "self" };
       }
-    } else {
-      res = { type: "snake-stopped" };
-      return res;
-    }
-
-    this.grid.setCell(currHead, BoardStates.snakeBody);
-    this.emptyCells.remove(nextHead);
-
-    const { head, tail } = this.snake.moveForward();
-    this.grid.setCell(head, BoardStates.snakeHead);
-
-    if (tail) {
-      this.grid.setCell(tail, BoardStates.empty);
-      this.emptyCells.insert(tail);
+    } else { // empty, snakeHead
+      res = { type: "snake-moved" };
     }
 
     return res;
@@ -124,7 +119,6 @@ export class Board {
 }
 
 export type BoardEvent =
-  | { type: "snake-stopped" }
   | { type: "snake-moved" }
   | { type: "fruit-eaten" }
   | { type: "collision"; with: "wall" | "self" };

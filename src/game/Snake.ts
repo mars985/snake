@@ -83,20 +83,23 @@ export class Snake {
 
   moveForward(): MoveResult {
     const res: MoveResult = {
-      head: this.head,
-      tail: null,
+      newHead: this.head,
+      prevHead: this.head,
+      prevTail: null,
     };
 
     if (this.direction === Directions.stopped) return res;
 
-    const newHead: GridPosition = this.getNextHead();
-    res.head = newHead;
+    const prevHead = this.getHead();
+    const newHead = this.getNextHead();
+    res.prevHead = prevHead;
+    res.newHead = newHead;
     this.head = newHead;
 
     this.queue.push(newHead);
 
     if (this.queue.size > this.length) {
-      res.tail = this.queue.pop()!;
+      res.prevTail = this.queue.pop()!;
     }
 
     return res;
@@ -104,6 +107,7 @@ export class Snake {
 }
 
 export interface MoveResult {
-  head: GridPosition;
-  tail: GridPosition | null;
+  newHead: GridPosition;
+  prevHead: GridPosition;
+  prevTail: GridPosition | null;
 }

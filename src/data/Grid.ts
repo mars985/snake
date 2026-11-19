@@ -40,6 +40,10 @@ export class Grid {
     const index = this.getIndex(position);
     this.buffer[index] = val;
   }
+
+  static equals(p1: GridPosition, p2: GridPosition): boolean {
+    return p1.col === p2.col && p1.row === p2.row;
+  }
 }
 
 export interface GridPosition {
